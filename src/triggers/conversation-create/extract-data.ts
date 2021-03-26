@@ -6,12 +6,10 @@ export const extractData = async (data) => {
     const appUserId = data.events[0].payload.user.id
 
     const {
-      data: {appUser},
-    } = await smoochClient(`/v1.1/apps/${appId}/appusers/${appUserId}`)
+      data: {clients},
+    } = await smoochClient(`/v2/apps/${appId}/users/${appUserId}/clients`)
 
-    const appleClient = appUser.clients.find(
-      ({platform}) => platform === 'apple',
-    )
+    const appleClient = clients.find(({type}) => type === 'apple')
 
     const {intent} = appleClient.raw
 

@@ -9,13 +9,15 @@ app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 
 app.post('/', (req, res) => {
-  console.log('req.body', JSON.stringify(req.body, null, 2))
-  console.log('req.headers', req.headers)
+  // console.log('req.body', JSON.stringify(req.body, null, 2))
+  // console.log('req.headers', req.headers)
 
   try {
-    const [triggerType] = req.body.events.map((event) => event.type)
+    const triggerType = req.body.events[0].type
+    console.log('user.id', req.body.events[0].payload.user.id)
     triggers[triggerType](req, res)
   } catch {
+    console.log('Invalid trigger')
     res.status(400).json({message: 'Invalid trigger'})
   }
 })

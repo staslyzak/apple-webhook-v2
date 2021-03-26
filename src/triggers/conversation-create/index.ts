@@ -1,44 +1,46 @@
 import {smoochClient} from '../../clients'
 import {extractData} from './extract-data'
 
+const mergeUsers = ({appId, survivingId, discardedId}) =>
+  smoochClient({
+    method: 'POST',
+    url: `/v1.1/apps/${appId}/appusers/merge`,
+    data: {
+      surviving: {
+        _id: survivingId,
+      },
+      discarded: {
+        _id: discardedId,
+      },
+    },
+  })
+
 export const handler = async (req, res) => {
-  const {appId, appUserId} = extractData(req.body)
+  const {appId, appUserId, intent: externalId} = await extractData(req.body)
 
-  let externalId = null
+  console.log('appId', appId)
+  console.log('appUserId', appUserId)
+  console.log('externalId', externalId)
 
-  try {
-    const {data} = await smoochClient(
-      `/v1.1/apps/${appId}/appusers/${appUserId}`,
-    )
-
-    const appleClient = data.appUser.clients.find(
-      ({platform}) => platform === 'apple',
-    )
-
-    externalId = appleClient.raw.intent
-  } catch {}
+  if (!externalId) {
+    console.log('Invalid intent')
+    return res.json({message: 'Invalid intent'})
+  }
 
   try {
-    if (externalId) {
-      const {data} = await smoochClient(`/v2/apps/${appId}/users/${externalId}`)
+    const {data} = await smoochClient(`/v2/apps/${appId}/users/${externalId}`)
 
-      await smoochClient({
-        method: 'POST',
-        url: `/v1.1/apps/${appId}/appusers/merge`,
-        data: {
-          surviving: {
-            _id: data.user.id,
-          },
-          discarded: {
-            _id: appUserId,
-          },
-        },
-      })
+    await mergeUsers({
+      appId,
+      survivingId: data.user.id,
+      discardedId: appUserId,
+    })
 
-      return res.status(200).json({message: 'Merged with existing'})
-    }
+    console.log('Merged with existing')
+    return res.json({message: 'Merged with existing'})
   } catch (error) {
-    console.log('error')
+    console.log('Error on update')
+    // console.log('error')
   }
 
   try {
@@ -50,21 +52,15 @@ export const handler = async (req, res) => {
       },
     })
 
-    await smoochClient({
-      method: 'POST',
-      url: `/v1.1/apps/${appId}/appusers/merge`,
-      data: {
-        surviving: {
-          _id: data.user.id,
-        },
-        discarded: {
-          _id: appUserId,
-        },
-      },
+    await mergeUsers({
+      appId,
+      survivingId: data.user.id,
+      discardedId: appUserId,
     })
 
-    return res.status(200).json({message: 'Success'})
+    console.log('Merged with created')
+    return res.json({message: 'Merged with created'})
   } catch (error) {
-    return res.status(400).json({message: 'User not found'})
+    return res.json({message: 'User not found'})
   }
 }

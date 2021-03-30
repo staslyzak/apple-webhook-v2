@@ -18,9 +18,7 @@ const mergeUsers = ({appId, survivingId, discardedId}) =>
 export const handler = async (req, res) => {
   const {appId, appUserId, intent: externalId} = await extractData(req.body)
 
-  console.log('appId', appId)
-  console.log('appUserId', appUserId)
-  console.log('externalId', externalId)
+  console.log({appId, appUserId, externalId})
 
   if (!externalId) {
     console.log('Invalid intent')
@@ -32,8 +30,8 @@ export const handler = async (req, res) => {
 
     await mergeUsers({
       appId,
-      survivingId: data.user.id,
-      discardedId: appUserId,
+      survivingId: appUserId,
+      discardedId: data.user.id,
     })
 
     console.log('Merged with existing')
@@ -54,8 +52,8 @@ export const handler = async (req, res) => {
 
     await mergeUsers({
       appId,
-      survivingId: data.user.id,
-      discardedId: appUserId,
+      survivingId: appUserId,
+      discardedId: data.user.id,
     })
 
     console.log('Merged with created')

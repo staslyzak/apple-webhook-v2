@@ -8,10 +8,16 @@ const app = express()
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 
-app.post('/', (req, res) => {
-  // console.log('req.body', JSON.stringify(req.body, null, 2))
-  // console.log('req.headers', req.headers)
+app.use((req, res, next) => {
+  if (req.headers['x-api-key'] === config.WEBHOOK_SECRET) {
+    next()
+  } else {
+    console.log('Unauthorized')
+    return res.json({message: 'Unauthorized'})
+  }
+})
 
+app.post('/', (req, res) => {
   try {
     const triggerType = req.body.events[0].type
     console.log('user.id', req.body.events[0].payload.user.id)

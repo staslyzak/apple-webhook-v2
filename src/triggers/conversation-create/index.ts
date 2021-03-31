@@ -1,22 +1,10 @@
 import {smoochClient} from '../../clients'
 import {extractData} from './extract-data'
 
-const mergeUsers = ({appId, survivingId, discardedId}) =>
-  smoochClient({
-    method: 'POST',
-    url: `/v1.1/apps/${appId}/appusers/merge`,
-    data: {
-      surviving: {
-        _id: survivingId,
-      },
-      discarded: {
-        _id: discardedId,
-      },
-    },
-  })
-
 export const handler = async (req, res) => {
   const {appId, appUserId, intent: externalId} = await extractData(req.body)
+
+  let user = null
 
   console.log({appId, appUserId, externalId})
 
@@ -28,36 +16,44 @@ export const handler = async (req, res) => {
   try {
     const {data} = await smoochClient(`/v2/apps/${appId}/users/${externalId}`)
 
-    await mergeUsers({
-      appId,
-      survivingId: data.user.id,
-      discardedId: appUserId,
-    })
-
-    console.log('Merged with existing')
-    return res.json({message: 'Merged with existing'})
+    user = data.user
+    console.log('Use existing user')
   } catch (error) {
-    console.log('Error on update')
-    // console.log('error')
+    const notFoundError = (error?.response?.errors ?? []).find(
+      ({code}) => code === 'user_not_found',
+    )
+    console.log(error.response.errors, notFoundError)
+
+    if (notFoundError) {
+      const {data} = await smoochClient({
+        method: 'POST',
+        url: `/v2/apps/${appId}/users`,
+        data: {
+          externalId,
+        },
+      })
+
+      user = data.user
+      console.log('Use created user')
+    }
   }
 
   try {
-    const {data} = await smoochClient({
+    await smoochClient({
       method: 'POST',
-      url: `/v2/apps/${appId}/users`,
+      url: `/v1.1/apps/${appId}/appusers/merge`,
       data: {
-        externalId,
+        surviving: {
+          _id: user.id,
+        },
+        discarded: {
+          _id: appUserId,
+        },
       },
     })
 
-    await mergeUsers({
-      appId,
-      survivingId: data.user.id,
-      discardedId: appUserId,
-    })
-
-    console.log('Merged with created')
-    return res.json({message: 'Merged with created'})
+    console.log('Merged')
+    return res.json({message: 'Successfully merged'})
   } catch (error) {
     return res.json({message: 'User not found'})
   }

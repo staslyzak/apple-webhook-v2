@@ -30,8 +30,8 @@ export const handler = async (req, res) => {
 
     await mergeUsers({
       appId,
-      survivingId: appUserId,
-      discardedId: data.user.id,
+      survivingId: data.user.id,
+      discardedId: appUserId,
     })
 
     console.log('Merged with existing')
@@ -52,8 +52,8 @@ export const handler = async (req, res) => {
 
     await mergeUsers({
       appId,
-      survivingId: appUserId,
-      discardedId: data.user.id,
+      survivingId: data.user.id,
+      discardedId: appUserId,
     })
 
     console.log('Merged with created')

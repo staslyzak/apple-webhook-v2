@@ -2,11 +2,16 @@ import {smoochClient} from '../../clients'
 import {extractData} from './extract-data'
 
 export const handler = async (req, res) => {
-  const {appId, appUserId, intent: externalId} = await extractData(req.body)
+  const {
+    appId,
+    appUserId,
+    intent: externalId,
+    conversationId,
+  } = await extractData(req.body)
 
   let user = null
 
-  console.log({appId, appUserId, externalId})
+  console.log({appId, appUserId, externalId, conversationId})
 
   if (!externalId) {
     console.log('Invalid intent')
@@ -53,8 +58,33 @@ export const handler = async (req, res) => {
     })
 
     console.log('Merged')
+  } catch (error) {
+    console.log(error)
+    return res.json(error.response)
+  }
+
+  try {
+    const {data} = await smoochClient({
+      method: 'GET',
+      url: `/v2/apps/${appId}/conversations/${conversationId}/messages`,
+    })
+
+    const [lastMessage] = data.messages
+
+    console.log('lastMessage', lastMessage)
+
+    await smoochClient({
+      method: 'POST',
+      url: `/v2/apps/${appId}/conversations/${conversationId}/messages`,
+      data: {
+        author: lastMessage.author,
+        content: lastMessage.content,
+      },
+    })
+
     return res.json({message: 'Successfully merged'})
   } catch (error) {
-    return res.json({message: 'User not found'})
+    console.log(error)
+    return res.json(error.response)
   }
 }

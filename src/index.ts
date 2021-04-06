@@ -20,7 +20,6 @@ app.use((req, res, next) => {
 app.post('/', (req, res) => {
   try {
     const triggerType = req.body.events[0].type
-    console.log('user.id', req.body.events[0].payload.user.id)
     triggers[triggerType](req, res)
   } catch {
     console.log('Invalid trigger')

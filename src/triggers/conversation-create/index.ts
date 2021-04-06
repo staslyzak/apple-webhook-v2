@@ -19,6 +19,27 @@ export const handler = async (req, res) => {
   }
 
   try {
+    const {data} = await smoochClient({
+      method: 'GET',
+      url: `/v2/apps/${appId}/conversations/${conversationId}/messages`,
+    })
+
+    const [lastMessage] = data.messages
+
+    await smoochClient({
+      method: 'POST',
+      url: `/v2/apps/${appId}/conversations/${conversationId}/messages`,
+      data: {
+        author: lastMessage.author,
+        content: lastMessage.content,
+      },
+    })
+  } catch (error) {
+    console.log(error.response.data)
+    return res.json(error.response.data)
+  }
+
+  try {
     const {data} = await smoochClient(`/v2/apps/${appId}/users/${externalId}`)
 
     user = data.user
@@ -57,34 +78,10 @@ export const handler = async (req, res) => {
       },
     })
 
-    console.log('Merged')
-  } catch (error) {
-    console.log(error)
-    return res.json(error.response)
-  }
-
-  try {
-    const {data} = await smoochClient({
-      method: 'GET',
-      url: `/v2/apps/${appId}/conversations/${conversationId}/messages`,
-    })
-
-    const [lastMessage] = data.messages
-
-    console.log('lastMessage', lastMessage)
-
-    await smoochClient({
-      method: 'POST',
-      url: `/v2/apps/${appId}/conversations/${conversationId}/messages`,
-      data: {
-        author: lastMessage.author,
-        content: lastMessage.content,
-      },
-    })
-
+    console.log('Successfully merged')
     return res.json({message: 'Successfully merged'})
   } catch (error) {
-    console.log(error)
-    return res.json(error.response)
+    console.log(error.response.data)
+    return res.json(error.response.data)
   }
 }

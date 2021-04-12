@@ -5,6 +5,8 @@ import {triggers} from './triggers'
 
 const app = express()
 
+console.log(config)
+
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 
@@ -31,8 +33,4 @@ app.post('/auth', (req, res) => {
   res.status(400).json({message: 'Not implemented'})
 })
 
-app.listen(config.PORT, () =>
-  process.env.NODE_ENV === 'development'
-    ? console.log(`Server listens at http://localhost:${config.PORT}`)
-    : null,
-)
+app.listen(config.PORT, () => console.log(`Server is up`))

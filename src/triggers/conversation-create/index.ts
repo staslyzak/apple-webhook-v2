@@ -10,6 +10,7 @@ export const handler = async (req, res) => {
   } = await extractData(req.body)
 
   let user = null
+  let lastMessage = null
 
   console.log({appId, appUserId, externalId, conversationId})
 
@@ -21,23 +22,11 @@ export const handler = async (req, res) => {
   try {
     const {data} = await smoochClient({
       method: 'GET',
-      url: `/v2/apps/${appId}/conversations/${conversationId}/messages`,
+      url: `/v1.1/apps/${appId}/appusers/${appUserId}/messages`,
     })
 
-    const [lastMessage] = data.messages
-
-    await smoochClient({
-      method: 'POST',
-      url: `/v2/apps/${appId}/conversations/${conversationId}/messages`,
-      data: {
-        author: lastMessage.author,
-        content: lastMessage.content,
-      },
-    })
-  } catch (error) {
-    console.log(error.response.data)
-    return res.json(error.response.data)
-  }
+    lastMessage = data.messages[0]
+  } catch (error) {}
 
   try {
     const {data} = await smoochClient(`/v2/apps/${appId}/users/${externalId}`)
@@ -45,10 +34,11 @@ export const handler = async (req, res) => {
     user = data.user
     console.log('Use existing user')
   } catch (error) {
-    const notFoundError = (error?.response?.errors ?? []).find(
+    const notFoundError = (error?.response?.data?.errors ?? []).find(
       ({code}) => code === 'user_not_found',
     )
-    console.log(error.response.errors, notFoundError)
+
+    console.log(notFoundError)
 
     if (notFoundError) {
       const {data} = await smoochClient({
@@ -78,6 +68,29 @@ export const handler = async (req, res) => {
       },
     })
 
+    // await smoochClient({
+    //   method: 'PATCH',
+    //   url: `/v2/apps/${appId}/users/${user.id}`,
+    //   data: {
+    //     metadata: {
+    //       messanger: 'ABC',
+    //     },
+    //   },
+    // })
+
+    if (lastMessage) {
+      await smoochClient({
+        method: 'POST',
+        url: `/v1.1/apps/${appId}/appusers/${user.id}/messages`,
+        data: {
+          role: 'appUser',
+          type: 'text',
+          text: lastMessage.text,
+        },
+      })
+    }
+
+    console.log('Message sent')
     console.log('Successfully merged')
     return res.json({message: 'Successfully merged'})
   } catch (error) {

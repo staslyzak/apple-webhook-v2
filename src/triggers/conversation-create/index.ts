@@ -10,7 +10,7 @@ export const handler = async (req, res) => {
   } = await extractData(req.body)
 
   let user = null
-  let lastMessage = null
+  // let lastMessage = null
 
   console.log({appId, appUserId, externalId, conversationId})
 
@@ -19,14 +19,14 @@ export const handler = async (req, res) => {
     return res.json({message: 'Invalid intent'})
   }
 
-  try {
-    const {data} = await smoochClient({
-      method: 'GET',
-      url: `/v1.1/apps/${appId}/appusers/${appUserId}/messages`,
-    })
+  // try {
+  //   const {data} = await smoochClient({
+  //     method: 'GET',
+  //     url: `/v1.1/apps/${appId}/appusers/${appUserId}/messages`,
+  //   })
 
-    lastMessage = data.messages[0]
-  } catch (error) {}
+  //   lastMessage = data.messages[0]
+  // } catch (error) {}
 
   try {
     const {data} = await smoochClient(`/v2/apps/${appId}/users/${externalId}`)
@@ -60,10 +60,10 @@ export const handler = async (req, res) => {
       url: `/v1.1/apps/${appId}/appusers/merge`,
       data: {
         surviving: {
-          _id: user.id,
+          _id: appUserId,
         },
         discarded: {
-          _id: appUserId,
+          _id: user.id,
         },
       },
     })
@@ -78,19 +78,19 @@ export const handler = async (req, res) => {
     //   },
     // })
 
-    if (lastMessage) {
-      await smoochClient({
-        method: 'POST',
-        url: `/v1.1/apps/${appId}/appusers/${user.id}/messages`,
-        data: {
-          role: 'appUser',
-          type: 'text',
-          text: lastMessage.text,
-        },
-      })
-    }
+    // if (lastMessage) {
+    //   await smoochClient({
+    //     method: 'POST',
+    //     url: `/v1.1/apps/${appId}/appusers/${user.id}/messages`,
+    //     data: {
+    //       role: 'appUser',
+    //       type: 'text',
+    //       text: lastMessage.text,
+    //     },
+    //   })
+    // }
 
-    console.log('Message sent')
+    // console.log('Message sent')
     console.log('Successfully merged')
     return res.json({message: 'Successfully merged'})
   } catch (error) {

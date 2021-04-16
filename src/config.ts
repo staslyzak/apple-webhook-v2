@@ -6,7 +6,7 @@ const generateBasicToken = (username, password) =>
   Buffer.from(`${username}:${password}`).toString('base64')
 
 const {
-  PORT = 3000,
+  PORT = 3001,
   ZENDESK_URL,
   ZENDESK_LOGIN,
   ZENDESK_PASSWORD,
